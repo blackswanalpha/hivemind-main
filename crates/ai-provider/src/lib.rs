@@ -8,6 +8,7 @@ pub mod anthropic;
 mod error;
 pub mod ollama;
 mod provider;
+pub mod router;
 pub mod secrets;
 
 pub use error::{parse_retry_after, ProviderError};
@@ -16,6 +17,7 @@ pub use provider::{
     EmbedResponse, Message, ModelHint, Provider, Role, StopReason, SystemBlock, ToolSchema,
     Usage,
 };
+pub use router::{Router, RoutingPolicy};
 
 pub use anthropic::AnthropicProvider;
 pub use ollama::OllamaProvider;
