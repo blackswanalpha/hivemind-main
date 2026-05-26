@@ -64,6 +64,14 @@ tauri = { version = "2", features = [] }
 tauri-build = { version = "2", features = [] }
 tauri-plugin-shell = "2"
 
+# Chromium Embedded Framework for per-tab webviews.
+# Pinned exact; tracks Chromium 148. Requires CEF_PATH env var pointing at a
+# CEF binary distribution (set up via the export-cef-dir tool — see README).
+cef = { version = "=148.2.0", features = ["build-util"] }
+# cef-dll-sys is pulled in transitively by `cef`; declaring it here lets
+# hivemind-desktop's build.rs receive its `DEP_CEF_DLL_CEF_DIR` metadata.
+cef-dll-sys = "=148.2.0"
+
 # internal crates
 hivemind-browser-core = { path = "crates/browser-core" }
 hivemind-storage = { path = "crates/storage" }

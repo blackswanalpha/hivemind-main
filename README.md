@@ -60,6 +60,54 @@ with `pnpm`.
 Target OS for v0 is **Linux only** — Mac/Windows happen after the skeleton
 is daily-driver quality.
 
+## Tab engine: migrating to CEF (Chromium)
+
+The original walking skeleton renders each tab inside an HTML `<iframe>`
+hosted by Tauri's wry/webkit2gtk webview. That approach hit two walls:
+major sites (Google, YouTube, Twitter/X, LinkedIn, Gmail, banks) refuse to
+be iframed via `X-Frame-Options` / CSP `frame-ancestors`, and Widevine DRM
+(Netflix, Spotify Web, Disney+) is not implementable on webkit2gtk at all.
+
+The engine for tab webviews is being migrated to **CEF (Chromium Embedded
+Framework)** via the [`cef` crate](https://crates.io/crates/cef). Tauri 2
+remains the app shell (chrome, IPC, AI sidebar); CEF handles each tab as a
+reparented child window. Plan and migration phases are tracked in
+`../docs/plan-cef.md` (alongside the other phase plans). Step-level work
+breakdown lives in `../workload/work04-engine-cef/`; runtime architecture
+in `../workload/flow27-cef-runtime/`.
+
+Phase A (CEF bootstrap) landed on the `engine/cef` branch 2026-05-26.
+
+What this changes for runtime requirements (Linux):
+
+- **Display server**: X11 or XWayland. Native Wayland is deferred — CEF
+  embeds via X11 reparenting today.
+- **Bundle size**: ~250 MB installed (CEF binary distribution at
+  ~200 MB + Tauri shell).
+- **Per-tab RAM**: 50–100 MB. Tab discard will be implemented; tabs
+  inactive past a threshold will be unloaded and recreated on activation.
+- **No system codec install needed** — CEF ships ffmpeg, H.264, AAC, VP9,
+  Opus, AV1. (The previous version of this README documented a `gst-*`
+  apt-install dance; that is no longer relevant for tab content.)
+
+### DRM (Netflix, Spotify Web, Disney+, Prime Video, Apple Music, Tidal)
+
+CEF supports Widevine, but the CDM binary is not redistributable. To enable
+DRM playback, **install Google Chrome on your system** — HiveMind detects
+and reuses Chrome's `WidevineCdm/` directory at startup. If Chrome is not
+installed, HiveMind shows a settings banner pointing to it.
+
+Even with the CDM available, **Linux is capped at Widevine L3**:
+
+- Netflix plays at **480p only** (this is the same ceiling as Firefox /
+  Chrome on Linux — a platform limit, not a HiveMind bug)
+- Disney+ plays at SD
+- Spotify Web plays at standard quality
+- YouTube Premium plays at full quality (does not require L1)
+
+Widevine L1 (HD / 4K) requires Google's OEM-only hardware certification and
+is not attainable for non-OEM software regardless of engine.
+
 ## Run
 
 From the workspace root (uses the proxy scripts in the root `package.json`):
@@ -99,9 +147,13 @@ cargo fmt --all                                         # format
 These are deliberate, not bugs. The reasoning lives in
 [explanation.md §5](./explanation.md#5-trade-offs-we-accepted-in-the-skeleton).
 
-- **Single webview per window** — tab switching re-navigates one shared
-  webview rather than per-tab webviews. Persistence and behavior are
-  correct; the visual snap on switch is a polish item for step 08 / Phase 1.
+- **Iframes per tab inside one OS webview** — `apps/desktop/src/components/Webview.tsx`
+  renders each tab as an HTML `<iframe>` toggled by CSS `display`, not as a
+  real webview. This is the biggest reason most sites (Google, YouTube,
+  Twitter/X, LinkedIn, Gmail, banks) currently show blank pages: they send
+  `X-Frame-Options: DENY` or CSP `frame-ancestors` and the webview honors
+  them. The fix is the CEF migration described under "Tab engine" above —
+  each tab becomes a reparented `CefBrowserHost`, not a wry webview.
 - **`ts-rs` not wired** — `src/types.ts` is a hand-maintained mirror of
   `crates/ipc-types`. Auto-generation lands when the type surface grows
   (likely step 05).
