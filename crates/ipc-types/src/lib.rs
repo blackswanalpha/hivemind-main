@@ -49,7 +49,7 @@ pub struct ChatTokenPayload {
     pub delta: String,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct UsageInfo {
     pub input_tokens: u32,
@@ -94,4 +94,58 @@ pub struct TabEventPayload {
     pub url: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub title: Option<String>,
+}
+
+// ---------- AI / chat wire types (work00 step 07) ----------
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ConversationInfo {
+    pub id: String,
+    pub workspace_id: String,
+    pub started_at: i64,
+    /// Optional preview of the first user message; used by the switcher.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub preview: Option<String>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct MessageInfo {
+    pub id: String,
+    pub role: String,
+    pub content: String,
+    pub created_at: i64,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AiProviderInfo {
+    pub name: String,
+    pub local: bool,
+    pub supports_tools: bool,
+    pub supports_embeddings: bool,
+    pub supports_prompt_caching: bool,
+    /// True iff the provider was successfully registered at startup.
+    pub registered: bool,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AiSettingsPayload {
+    pub provider: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub model: Option<String>,
+    /// One of `"prefer_local"`, `"prefer_cloud"`, `"explicit_name"`.
+    pub policy: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TestProviderResult {
+    pub ok: bool,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub latency_ms: Option<u32>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub error: Option<String>,
 }

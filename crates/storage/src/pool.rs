@@ -56,6 +56,11 @@ pub async fn open_pool(db_path: &Path) -> Result<SqlitePool, StorageError> {
 /// Open an in-memory pool with migrations applied. Test-only helper.
 #[cfg(test)]
 pub(crate) async fn open_pool_in_memory() -> Result<SqlitePool, StorageError> {
+    open_pool_in_memory_impl().await
+}
+
+#[cfg(test)]
+async fn open_pool_in_memory_impl() -> Result<SqlitePool, StorageError> {
     let opts = SqliteConnectOptions::new()
         .in_memory(true)
         .foreign_keys(true);
