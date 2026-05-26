@@ -62,16 +62,23 @@ is daily-driver quality.
 
 ## Run
 
+From the workspace root (uses the proxy scripts in the root `package.json`):
+
 ```bash
-cd apps/desktop
-pnpm install                       # one-time
-pnpm tauri dev                     # launches the Tauri window
+pnpm install:ui                    # one-time; runs pnpm install in apps/desktop
+pnpm tauri:dev                     # launches the Tauri window
+```
+
+Or directly from the UI package if you prefer:
+
+```bash
+cd apps/desktop && pnpm tauri dev
 ```
 
 Verbose logging:
 
 ```bash
-RUST_LOG=hivemind=debug,info pnpm tauri dev
+RUST_LOG=hivemind=debug,info pnpm tauri:dev
 ```
 
 App data (SQLite DB) lives at `~/.local/share/hivemind/hivemind.db`. Delete
