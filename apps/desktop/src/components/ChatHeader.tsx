@@ -18,13 +18,24 @@ export function ChatHeader({ onOpenSettings, onCollapse }: Props) {
           <span className="h-2 w-2 rounded-full bg-hivemind-accent" />
           <span className="text-sm font-medium">AI assistant</span>
         </div>
-        <button
-          aria-label="Collapse sidebar"
-          onClick={onCollapse}
-          className="text-hivemind-mute hover:text-hivemind-fg"
-        >
-          ›
-        </button>
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            aria-label="Open AI settings"
+            title="AI settings (provider, model, policy)"
+            onClick={onOpenSettings}
+            className="rounded border border-hivemind-border bg-hivemind-bg/40 px-1.5 py-0.5 text-xs text-hivemind-fg hover:border-hivemind-accent hover:text-hivemind-accent"
+          >
+            ⚙
+          </button>
+          <button
+            aria-label="Collapse sidebar"
+            onClick={onCollapse}
+            className="text-hivemind-mute hover:text-hivemind-fg"
+          >
+            ›
+          </button>
+        </div>
       </div>
       <div className="flex flex-wrap items-center gap-2 text-[11px] text-hivemind-mute">
         <button
@@ -33,7 +44,7 @@ export function ChatHeader({ onOpenSettings, onCollapse }: Props) {
           className="rounded border border-hivemind-border bg-hivemind-bg/40 px-2 py-0.5 hover:border-hivemind-accent"
           title="Open AI settings"
         >
-          {`Model: ${modelLabel} ▾`}
+          {`⚙ Model: ${modelLabel} ▾`}
         </button>
         <span
           className={`rounded border border-hivemind-border px-2 py-0.5 ${
