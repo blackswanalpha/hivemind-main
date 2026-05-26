@@ -1,19 +1,21 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 
-// Tauri 2 hands us the dev server URL via TAURI_DEV_HOST when developing on a phone;
-// for desktop-only Linux dev, fixed 5173 is fine.
+// Port 1421 (Tauri's ecosystem range) instead of Vite's default 5173 so HiveMind
+// doesn't collide with other Vite projects (e.g. Minty also on 5173). Keep this
+// in sync with `apps/desktop/src-tauri/tauri.conf.json` -> build.devUrl.
+const DEV_PORT = 1421;
 const host = process.env.TAURI_DEV_HOST;
 
 export default defineConfig({
   plugins: [react()],
   clearScreen: false,
   server: {
-    port: 5173,
+    port: DEV_PORT,
     strictPort: true,
     host: host || false,
     hmr: host
-      ? { protocol: "ws", host, port: 5174 }
+      ? { protocol: "ws", host, port: DEV_PORT + 1 }
       : undefined,
     watch: {
       // Prevent vite from watching the Rust src-tauri tree — Tauri handles it.
