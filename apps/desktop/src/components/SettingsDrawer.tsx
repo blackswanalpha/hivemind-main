@@ -17,21 +17,42 @@ const POLICIES: Array<{ value: AiSettingsPayload["policy"]; label: string }> = [
   { value: "explicit_name", label: "Lock to selected provider" },
 ];
 
+const FALLBACK_DRAFT: AiSettingsPayload = {
+  provider: "ollama",
+  model: undefined,
+  policy: "prefer_local",
+};
+
 export function SettingsDrawer({ open, onClose }: Props) {
-  const { providers, settings, updateSettings, testProvider } = useAiSettings();
+  const { providers, settings, isReady, reload, updateSettings, testProvider } =
+    useAiSettings();
   const [draft, setDraft] = useState<AiSettingsPayload | null>(settings);
   const [testResult, setTestResult] = useState<TestProviderResult | null>(null);
   const [testing, setTesting] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Sync `draft` whenever the drawer opens OR settings finishes loading.
+  // Without the second case, opening the drawer before settings has loaded
+  // leaves `draft` null and the panel silently invisible.
   useEffect(() => {
-    if (open) {
+    if (!open) return;
+    if (settings) {
       setDraft(settings);
-      setTestResult(null);
-      setError(null);
+    } else if (isReady) {
+      setDraft(FALLBACK_DRAFT);
     }
-  }, [open, settings]);
+    setTestResult(null);
+    setError(null);
+  }, [open, isReady, settings]);
+
+  // If the user opens the drawer before AiSettingsContext has loaded, kick a
+  // reload so we don't sit at "Loading…" forever if the initial load lost a race.
+  useEffect(() => {
+    if (open && !isReady) {
+      reload().catch((err) => setError(String(err)));
+    }
+  }, [open, isReady, reload]);
 
   const modelChoices = useMemo(() => {
     if (!draft) return [];
@@ -40,18 +61,21 @@ export function SettingsDrawer({ open, onClose }: Props) {
     return [];
   }, [draft]);
 
-  if (!open || !draft) return null;
+  if (!open) return null;
 
   const handleProviderChange = (name: string) => {
+    if (!draft) return;
     setDraft({ ...draft, provider: name, model: undefined });
     setTestResult(null);
   };
 
   const handlePolicyChange = (policy: string) => {
+    if (!draft) return;
     setDraft({ ...draft, policy });
   };
 
   const handleTest = async () => {
+    if (!draft) return;
     setTesting(true);
     setTestResult(null);
     setError(null);
@@ -66,6 +90,7 @@ export function SettingsDrawer({ open, onClose }: Props) {
   };
 
   const handleSave = async () => {
+    if (!draft) return;
     setSaving(true);
     setError(null);
     try {
@@ -86,7 +111,7 @@ export function SettingsDrawer({ open, onClose }: Props) {
         aria-label="Close settings"
         role="button"
       />
-      <aside className="flex w-[360px] flex-col gap-4 border-l border-hivemind-border bg-hivemind-panel p-4">
+      <aside className="flex w-full max-w-[360px] flex-col gap-4 overflow-y-auto border-l border-hivemind-border bg-hivemind-panel p-4 shadow-xl">
         <div className="flex items-center justify-between">
           <h2 className="text-sm font-medium">AI Providers</h2>
           <button
@@ -98,6 +123,12 @@ export function SettingsDrawer({ open, onClose }: Props) {
           </button>
         </div>
 
+        {!draft ? (
+          <div className="flex flex-1 items-center justify-center text-xs text-hivemind-mute">
+            Loading AI providers…
+          </div>
+        ) : (
+          <>
         <section className="flex flex-col gap-2">
           <div className="text-[11px] uppercase tracking-wide text-hivemind-mute">
             Provider
@@ -220,6 +251,8 @@ export function SettingsDrawer({ open, onClose }: Props) {
             {saving ? "Saving…" : "Save"}
           </button>
         </div>
+          </>
+        )}
       </aside>
     </div>
   );
