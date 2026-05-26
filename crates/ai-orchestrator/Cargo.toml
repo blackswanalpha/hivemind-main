@@ -6,4 +6,18 @@ license.workspace = true
 publish.workspace = true
 
 [dependencies]
-# Filled out in step 07.
+async-trait.workspace = true
+futures.workspace = true
+hivemind-ai-provider.workspace = true
+hivemind-ipc-types.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+tokio = { workspace = true, features = ["macros", "rt-multi-thread", "sync"] }
+tracing.workspace = true
+ulid.workspace = true
+chrono.workspace = true
+anyhow.workspace = true
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["macros", "rt-multi-thread", "test-util"] }

@@ -33,6 +33,9 @@ sqlx = { workspace = true }
 hivemind-browser-core = { workspace = true }
 hivemind-storage = { workspace = true }
 hivemind-ipc-types = { workspace = true }
+hivemind-ai-provider = { workspace = true }
+hivemind-ai-orchestrator = { workspace = true }
+futures = { workspace = true }
 
 [features]
 default = ["custom-protocol"]

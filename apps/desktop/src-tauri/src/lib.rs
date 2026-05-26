@@ -3,6 +3,7 @@
 //! Step 04 wires tab/session commands and emits `AppStarted` once the
 //! SQLite-backed state is ready. AI commands land in step 07+.
 
+mod ai_commands;
 mod commands;
 mod state;
 
@@ -37,6 +38,15 @@ pub fn run() {
             commands::set_active_tab,
             commands::navigate,
             commands::switch_workspace,
+            ai_commands::create_conversation,
+            ai_commands::list_conversations,
+            ai_commands::load_messages,
+            ai_commands::delete_conversation,
+            ai_commands::send_message,
+            ai_commands::list_providers,
+            ai_commands::get_ai_settings,
+            ai_commands::set_ai_settings,
+            ai_commands::test_provider,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
