@@ -37,6 +37,12 @@ hivemind-ai-provider = { workspace = true }
 hivemind-ai-orchestrator = { workspace = true }
 futures = { workspace = true }
 
+# CEF (Chromium Embedded Framework) — per-tab webviews.
+# cef-dll-sys is also a direct dep purely so build.rs receives the
+# DEP_CEF_DLL_CEF_DIR metadata for rpath wiring.
+cef = { workspace = true }
+cef-dll-sys = { workspace = true }
+
 [features]
 default = ["custom-protocol"]
 custom-protocol = ["tauri/custom-protocol"]

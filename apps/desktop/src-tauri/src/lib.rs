@@ -2,21 +2,47 @@
 //!
 //! Step 04 wires tab/session commands and emits `AppStarted` once the
 //! SQLite-backed state is ready. AI commands land in step 07+.
+//! Engine migration (Phase A): CEF is initialized before Tauri builds and
+//! pumped from Tauri's run-event callback. See `cef_init.rs`.
 
 mod ai_commands;
+pub mod cef_init;
 mod commands;
 mod state;
 
+use cef::args::Args;
 use tracing_subscriber::EnvFilter;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
-pub fn run() {
+pub fn run(cef_args: Args) {
     init_tracing();
 
-    tauri::Builder::default()
+    // Initialize CEF before building the Tauri app. external_message_pump
+    // mode lets Tauri's tao loop drive CEF; without it CEF would try to own
+    // the main thread and deadlock the GTK loop.
+    let mut cef_app = cef_init::HiveMindCefApp::new();
+    let cef_settings = cef_init::settings();
+    let init_ret = cef::initialize(
+        Some(cef_args.as_main_args()),
+        Some(&cef_settings),
+        Some(&mut cef_app),
+        std::ptr::null_mut(),
+    );
+    if init_ret != 1 {
+        panic!("cef::initialize returned {init_ret} (expected 1)");
+    }
+    tracing::info!("CEF initialized");
+
+    let tauri_app = tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
         .setup(|app| {
             let handle = app.handle().clone();
+            // Publish the AppHandle so the CEF BrowserProcessHandler can
+            // post pump work onto the main thread. Must happen as early as
+            // possible in setup; until set, `on_schedule_message_pump_work`
+            // drops requests (CEF retries).
+            let _ = cef_init::APP_HANDLE.set(handle.clone());
+
             // Block until persistence is open and session is hydrated. This
             // happens before the first command can fire, so state::AppState
             // is guaranteed to be present.
@@ -48,8 +74,19 @@ pub fn run() {
             ai_commands::set_ai_settings,
             ai_commands::test_provider,
         ])
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .build(tauri::generate_context!())
+        .expect("error while building tauri application");
+
+    tauri_app.run(|_app_handle, event| {
+        // CEF is pumped on demand via
+        // `HiveMindBrowserProcessHandler::on_schedule_message_pump_work`,
+        // not on every Tauri event — the latter starves webkit2gtk repaints
+        // and leaves the Tauri window blank.
+        if matches!(event, tauri::RunEvent::Exit) {
+            tracing::info!("Tauri Exit — shutting down CEF");
+            cef::shutdown();
+        }
+    });
 }
 
 fn init_tracing() {
