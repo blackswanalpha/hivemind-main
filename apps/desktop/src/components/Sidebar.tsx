@@ -1,18 +1,21 @@
 import { useEffect, useState } from "react";
 
-const STARTER_PROMPTS = [
-  "Summarize the current tab",
-  "What did I read about X this week?",
-  "Open the docs for this library",
-  "Compare these tabs",
-];
+import { useChat } from "../state/ChatContext";
+import { ChatComposer } from "./ChatComposer";
+import { ChatHeader } from "./ChatHeader";
+import { ConversationSwitcher } from "./ConversationSwitcher";
+import { MessageList } from "./MessageList";
+import { SettingsDrawer } from "./SettingsDrawer";
+import { StarterPrompts } from "./StarterPrompts";
 
 export function Sidebar() {
   const [open, setOpen] = useState(true);
+  const [showSettings, setShowSettings] = useState(false);
+  const [composerSeed, setComposerSeed] = useState<string | undefined>(undefined);
+  const { messages, streaming, error, sendMessage, clearError } = useChat();
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      // Ctrl+Shift+A toggles the sidebar (per docs/sitemap/04-ai-sidebar.md).
       if (e.ctrlKey && e.shiftKey && (e.key === "A" || e.key === "a")) {
         e.preventDefault();
         setOpen((v) => !v);
@@ -35,52 +38,48 @@ export function Sidebar() {
     );
   }
 
+  const handleSend = async (text: string) => {
+    setComposerSeed(undefined);
+    await sendMessage(text);
+  };
+
   return (
-    <aside className="flex h-full w-[360px] shrink-0 flex-col border-l border-hivemind-border bg-hivemind-panel">
-      <header className="flex items-center justify-between border-b border-hivemind-border px-3 py-2">
-        <div className="flex items-center gap-2">
-          <span className="h-2 w-2 rounded-full bg-hivemind-accent" />
-          <span className="text-sm font-medium">AI assistant</span>
+    <aside className="relative flex h-full w-[360px] shrink-0 flex-col border-l border-hivemind-border bg-hivemind-panel">
+      <ChatHeader
+        onOpenSettings={() => setShowSettings(true)}
+        onCollapse={() => setOpen(false)}
+      />
+      <ConversationSwitcher />
+      {messages.length === 0 ? (
+        <StarterPrompts onPick={(t) => setComposerSeed(t)} />
+      ) : (
+        <MessageList messages={messages} />
+      )}
+      {error ? (
+        <div className="mx-3 mb-2 flex items-center justify-between rounded border border-red-500/60 bg-red-500/10 px-3 py-1.5 text-[11px] text-red-300">
+          <span className="truncate" title={error}>
+            {error}
+          </span>
+          <button
+            onClick={clearError}
+            aria-label="Dismiss error"
+            className="ml-2 shrink-0 text-red-200 hover:text-red-100"
+          >
+            ✕
+          </button>
         </div>
-        <button
-          aria-label="Collapse sidebar"
-          onClick={() => setOpen(false)}
-          className="text-hivemind-mute hover:text-hivemind-fg"
-        >
-          ›
-        </button>
-      </header>
-
-      <div className="flex flex-1 flex-col items-center justify-center px-6 text-center">
-        <h3 className="mb-2 text-sm font-medium text-hivemind-fg">
-          Hi — ask me about what you&apos;ve read,
-          <br />
-          or what to do next.
-        </h3>
-        <p className="mb-6 text-xs text-hivemind-mute">
-          AI chat lands in step 08. These starters are placeholders.
-        </p>
-        <div className="flex w-full flex-col gap-2">
-          {STARTER_PROMPTS.map((p) => (
-            <button
-              key={p}
-              disabled
-              className="w-full cursor-not-allowed rounded border border-hivemind-border bg-hivemind-bg/40 px-3 py-2 text-left text-xs text-hivemind-mute"
-            >
-              {p}
-            </button>
-          ))}
-        </div>
-      </div>
-
+      ) : null}
       <footer className="border-t border-hivemind-border p-3">
-        <textarea
-          disabled
-          rows={2}
-          placeholder="Ask anything… (disabled until step 08)"
-          className="w-full resize-none rounded border border-hivemind-border bg-hivemind-bg/40 px-2 py-1.5 text-xs text-hivemind-mute outline-none"
+        <ChatComposer
+          disabled={streaming}
+          initialText={composerSeed}
+          onSend={handleSend}
         />
       </footer>
+      <SettingsDrawer
+        open={showSettings}
+        onClose={() => setShowSettings(false)}
+      />
     </aside>
   );
 }

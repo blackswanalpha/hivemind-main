@@ -7,6 +7,8 @@ import { StatusBar } from "./components/StatusBar";
 import { TabStrip } from "./components/TabStrip";
 import { Webview } from "./components/Webview";
 import { events } from "./ipc";
+import { AiSettingsProvider } from "./state/AiSettingsContext";
+import { ChatProvider } from "./state/ChatContext";
 import { TabsProvider, useTabs } from "./state/TabsContext";
 
 function MainSurface() {
@@ -36,7 +38,6 @@ function MainSurface() {
 function AppStartedLogger() {
   useEffect(() => {
     const p = events.onAppStarted((payload) => {
-      // Surface in dev tools; useful when verifying the boot path.
       console.info("AppStarted", payload);
     });
     return () => {
@@ -49,8 +50,12 @@ function AppStartedLogger() {
 export default function App() {
   return (
     <TabsProvider>
-      <AppStartedLogger />
-      <MainSurface />
+      <AiSettingsProvider>
+        <ChatProvider>
+          <AppStartedLogger />
+          <MainSurface />
+        </ChatProvider>
+      </AiSettingsProvider>
     </TabsProvider>
   );
 }
