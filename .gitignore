@@ -1,0 +1,28 @@
+# Rust
+/target
+**/*.rs.bk
+Cargo.lock.bak
+
+# Node / frontend
+node_modules
+dist
+.vite
+*.local
+
+# Editor / OS
+.idea
+.vscode
+.DS_Store
+Thumbs.db
+
+# HiveMind local data (never check in)
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+.env
+.env.local
+
+# Tauri
+**/src-tauri/target
+**/src-tauri/gen

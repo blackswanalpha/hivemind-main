@@ -1,0 +1,84 @@
+[workspace]
+resolver = "2"
+members = [
+    "apps/desktop/src-tauri",
+    "crates/browser-core",
+    "crates/storage",
+    "crates/ipc-types",
+    "crates/ai-provider",
+    "crates/ai-orchestrator",
+    "crates/memory",
+]
+
+[workspace.package]
+version = "0.0.0"
+edition = "2021"
+license = "MIT"
+publish = false
+rust-version = "1.80"
+
+[workspace.dependencies]
+# async + runtime
+tokio = { version = "1", features = ["full"] }
+async-trait = "0.1"
+futures = "0.3"
+async-stream = "0.3"
+
+# error / logging
+anyhow = "1"
+thiserror = "1"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt"] }
+
+# serde
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+# ids + urls + time
+ulid = { version = "1", features = ["serde"] }
+url = { version = "2", features = ["serde"] }
+chrono = { version = "0.4", default-features = false, features = ["clock", "serde"] }
+
+# storage
+sqlx = { version = "0.8", default-features = false, features = [
+    "runtime-tokio-rustls",
+    "sqlite",
+    "macros",
+    "migrate",
+] }
+directories-next = "2"
+
+# http (for ai-provider in step 05; declared here so workspace is consistent)
+reqwest = { version = "0.12", default-features = false, features = [
+    "rustls-tls",
+    "json",
+    "stream",
+] }
+eventsource-stream = "0.2"
+
+# secrets (step 05)
+keyring = "3"
+
+# tauri (app)
+tauri = { version = "2", features = [] }
+tauri-build = { version = "2", features = [] }
+tauri-plugin-shell = "2"
+
+# internal crates
+hivemind-browser-core = { path = "crates/browser-core" }
+hivemind-storage = { path = "crates/storage" }
+hivemind-ipc-types = { path = "crates/ipc-types" }
+hivemind-ai-provider = { path = "crates/ai-provider" }
+hivemind-ai-orchestrator = { path = "crates/ai-orchestrator" }
+hivemind-memory = { path = "crates/memory" }
+
+[profile.dev]
+opt-level = 0
+debug = true
+incremental = true
+
+[profile.release]
+opt-level = 3
+lto = "thin"
+codegen-units = 1
+strip = true
